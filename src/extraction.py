@@ -87,17 +87,16 @@ def merge_narrative_segments(events: List[Dict], entities: List[Dict]) -> List[D
     pass
 
 
-def create_narrative_segment(entities: List[Dict], events: List[Dict],
-                 graph: nx.Graph = None) -> Tuple[List[Dict], nx.Graph]:
+def create_narrative_segment(entities: List[Dict], events: List[Dict]) -> Tuple[List[Dict], nx.Graph]:
     """
     Create node dictionaries for entities, events, and segments.
 
-    Optionally build a networkx graph linking:
+    Build a networkx graph linking:
       - event -> entity when entity span is inside event span (label: 'involves')
       - segment -> event/entity when contained (label: 'contains')
 
     Returns:
-      nodes (list of dict) and graph (networkx.Graph or None)
+      nodes (list of dict) and graph (networkx.Graph)
     """
     nodes = []
     segment_node = {
@@ -134,10 +133,7 @@ def create_narrative_segment(entities: List[Dict], events: List[Dict],
         nodes.append(node)
         id_map["event"][ev["id"]] = node
 
-    if graph is None:
-        graph = nx.DiGraph()
-
-    
+    graph = nx.DiGraph()
     for n in nodes:
         graph.add_node(n["id"], **{k: v for k, v in n.items() if k != "id"})
         

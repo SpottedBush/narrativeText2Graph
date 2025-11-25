@@ -50,7 +50,7 @@ def visualize_graph(graph,
         ntype = ninfo.get('type') or gattrs.get('type') or gattrs.get('label') or 'unknown'
         types.append(ntype)
         if ntype == 'event':
-            text = ''.join(ninfo.get('subject_texts', [])) + ninfo.get('lemma', '[]') + ''.join(ninfo.get('object_texts', []))
+            text = ''.join(ninfo.get('subjects', [])) + " " + ninfo.get('lemma', '[]') + " " + ''.join(ninfo.get('objects', []))
         else:
             text = ninfo.get('text') or gattrs.get('text') or str(nid)
         labels[nid] = shorten(text, width=label_max_width, placeholder='…')
