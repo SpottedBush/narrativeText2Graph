@@ -1,7 +1,8 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Iterable
 import spacy
 from spacy.language import Language
 from spacy.tokens import Doc
+from gliner2 import GLiNER2
 
 """
 preprocess.py
@@ -69,6 +70,42 @@ def parse_dependencies(doc: Doc) -> List[List[Dict[str, Any]]]:
             })
         results.append(sent_tokens)
     return results
+
+
+
+@Language.factory("gliner-ner", default_config={"gliner_model": "fastino/gliner2-base-v1", "entities": ["location", "character"], "threshold": 0.3, "batch_size": 8, "gpu": False})
+def create_gliner_component(nlp: Language, name: str, gliner_model: str, entities: Iterable[str], threshold: float, batch_size: int, gpu: bool):
+    return GlinerNerComponent(gliner_model, entities, threshold, batch_size, gpu)
+
+class GlinerNerComponent:
+    def __init__(self, gliner_model, entities, threshold, batch_size, gpu):
+        self.gliner_model = gliner_model
+        self.batch_size = batch_size
+        self.entities = list(entities)
+        self.threshold = threshold
+        self.model = GLiNER2.from_pretrained(self.gliner_model)
+
+        if gpu:
+            import torch
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.model.to(device)
+
+    def __call__(self, doc):
+
+        if not Doc.has_extension("ents"): # Add doc._.ents dict
+            Doc.set_extension("ents", default=True) 
+
+        # TODO Arnaud: handle Batch processing -> batch_extract_entities
+        out = self.model.extract_entities(
+            text=doc._.resolved_text if Doc.has_extension("resolved_text") else doc.text,
+            entity_types=self.entities,
+            threshold=self.threshold,
+            include_confidence=True,
+        ) # -> Dict[str, Any]
+        
+        doc._.ents = out["entities"]
+
+        return doc # Always return doc
 
 
 # Convenience wrapper
